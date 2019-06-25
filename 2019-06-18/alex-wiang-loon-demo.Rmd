@@ -1,0 +1,156 @@
+---
+title: "Loon for Interactive Data Visualization"
+subtitle: "R-Ladies Toronto Lightning Talks"
+author: "Alex Wang"
+date: "June 18, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Introduction
+
+- Open-source R package for creating interactive graphs
+
+- Developed by a PhD student at University of Waterloo (Waddell, A., 2016)
+
+- GUI elements built with Tcl/Tk, with wrapper functions in R
+
+- Interactions with plots done via (i) mouse/keyboard gestures, (ii) inspector,
+(iii) programmatically
+
+- Many standard plot types available (e.g. scatterplot, histograms, polygons)
+
+
+## Links
+
+- Reference for the demo: http://www.stats.uwaterloo.ca/~rwoldfor/talks/loonTutorial/userSlides/Intro.pdf
+
+- PhD thesis on `loon`: https://uwspace.uwaterloo.ca/bitstream/handle/10012/10188/Waddell_Adrian.pdf 
+
+- Github repository: https://github.com/great-northern-diver/loon
+
+- `pkgdown` website: http://great-northern-diver.github.io/loon/
+
+- CRAN link: https://cran.r-project.org/web/packages/loon/index.html
+
+
+## Demo
+
+```{r}
+library(loon)
+```
+
+Dataset used: `quakes` - locations of 1000 earthquakes near Fiji with MB > 4.0.
+
+```{r}
+head(quakes)
+```
+
+
+## Creating a Plot and Direct Manipulation
+
+The main function for creating plots in loon is `l_plot` (`l_hist` for
+histogram).
+
+Calling `l_plot` (or any other plotting function) will create two windows - one
+for the plot and one for the "inspector", which is used for modifying and
+overseeing plots.
+
+```{r}
+p <- l_plot(x = quakes$long, 
+            y = quakes$lat, 
+            xlabel = 'longitude', 
+            ylabel = 'latitude', 
+            title = 'Fiji Earthquakes')
+```
+
+Details about possible interaction gestures can be found using `?l_plot`.
+
+
+## Programmatic Manipulation
+
+The `names` associated with a `loon` plot indicate its contents or states:
+
+```{r}
+names(p)
+```
+
+More information about the states can be found as follows:
+
+```{r}
+l_info_states(p, states = 'itemLabel')
+```
+
+The states of `p` can be accessed and set using `[]`. For example, we can add tooltips:
+
+```{r}
+p['itemLabel'] <- paste0('Magnitude: ', quakes$mag)
+p['showItemLabels'] <- TRUE
+```
+
+
+## Linked Plots
+
+We can add a histogram for the depth of the earthquakes, and link it to the
+original scatterplot by giving them a common `linkingGroup`.
+
+```{r}
+h <- l_hist(quakes$depth,
+            xlabel = "depth",
+            title = "Fiji Earthquake Depths")
+```
+
+In order to synchronize two plots, `loon` needs to know which set of plot states
+to draw from, so we need to use the `l_configure` command to specify whose
+states to keep (i.e. "push"), and whose states should be overwritten (i.e.
+"pull").
+
+```{r}
+l_configure(p, linkingGroup = "quakes", sync = "push")
+l_configure(h, linkingGroup = "quakes", sync = "pull")
+```
+
+
+## Capturing Plot Contents
+
+`grid.loon` constructs `grob` objects from `loon` plots, which can then be used
+like any other `grob` object with the `grid` package. It also captures the
+current plot states (e.g. colors, sizing).
+
+```{r}
+pgrob <- grid.loon(p, draw = FALSE)
+class(pgrob)
+```
+
+```{r}
+library(grid)
+grid.newpage()
+grid.draw(pgrob)
+```
+
+
+## Appendix: Adding Layers
+
+`loon` also supports layering. For example, we can overlay a map of Fiji to the
+scatterplot:
+
+```{r}
+library(maps)
+
+NZFijiMap <- map("world2", 
+                 regions = c("New Zealand", "Fiji"), 
+                 plot = FALSE)
+```
+
+```{r}
+m <- l_layer(p, 
+             NZFijiMap,
+             label = "New Zealand and Fiji",
+             color = "forestgreen")
+```
+
+
