@@ -1,5 +1,13 @@
 # R-Ladies Toronto Meetups
 
+### 2019-07-18:
+
+* Heather Krause: Ethics in Data Products
+    * [Slides](https://github.com/rladies/meetup-presentations_toronto/blob/master/2019-07-18/Krause_R%20Ladies_Presentation.pdf)
+    * [Data Ethics and Equity Checklist for Data Science in R](https://github.com/rladies/meetup-presentations_toronto/tree/master/2019-07-18/We_All_Count_Ethics_Public_Draft.Rmd)
+* Erle Holgersen: [Detecting Life Changes from iPhone Step Counts](https://github.com/rladies/meetup-presentations_toronto/tree/master/2019-07-18/2019-07-18_detecting_life_changes_step_counts.pdf)
+
+
 ### 2019-06-18: Lightning Talks
 
 * Samantha Wilson: [Machine learning approaches to predict disease](https://github.com/rladies/meetup-presentations_toronto/tree/master/2019-06-18/samantha-wilson-preterm-birth.pdf)

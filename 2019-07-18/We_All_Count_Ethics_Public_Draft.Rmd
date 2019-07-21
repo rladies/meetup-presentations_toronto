@@ -1,0 +1,318 @@
+---
+title: "Data Ethics and Equity Checklist for Data Science in R. Part of the We All Count project."
+author: "Heather Krause, Georges Monette"
+date: "July 3, 2019"
+output: 
+  prettydoc::html_pretty:
+    toc: true
+    theme: leonids
+    highlight: github
+runtime: shiny
+---
+```{r setup, include=FALSE}
+library(knitr)
+library(shiny)
+library(xtable)
+opts_chunk$set(echo = TRUE)
+echo <- TRUE
+disp <- function(...) {}
+pfmt <- function(x, digits = 5, scientific = FALSE,
+                 col = c(black=1,
+                         bisque=.05,
+                         tomato=.01)) {
+  x <- format(xx <- round(x, digits), scientific = scientific)
+  disp(xx)
+  disp(col)
+  x[as.double(xx) == 0] <- paste(c("<.", rep("0", digits -
+                                               1), "1"), collapse = "")
+  ret <- x
+  if(!is.null(col)){
+    cols <- rep(names(col)[1],length(x))
+    for(i in 1:length(col)) {
+      disp(i)
+      disp(col[i])
+      disp(names(col)[i])
+      disp(cols)
+      cols[xx<col[i]] <- names(col)[i]
+      disp(cols)
+    }
+    ret <- paste0("<span style = 'color:",cols,";'>",x,"</span>")
+  }
+  ret
+}
+pfmt(c(.01,.5,.02,.01,.008,.00001,.00000000001))
+
+mytable <- function(...) {
+  print(xtable(...), 
+        sanitize.text.function = identity,  
+        type = 'html', include.rownames = FALSE, 
+        html.table.attributes = "style = 'width: auto;'")
+}
+  
+```
+
+# Getting Started 
+
+The [We All Count project for equity in data](https://weallcount.com/) is designed to provide tools and techniques for embedding equity and ethics into data products. As part of this, we've developed a data ethics checklist that can be used in any data project. This is the R version. 
+
+Data analysis is a tool. It doesn’t have any more of a perspective than a hammer or more opinions than a cheese grater. Humans, on the other hand, are full of bias. They have unique perspectives, assumptions, and worldviews embedded so deeply, that it can feel like they are simply expressions of our objective reality. When humans use data science, we need to carefully identify what perspective we’re bringing to the task, and never believe that we aren’t bringing preconceived ideas with us, even in the simplest cases. 
+
+We think about data projects in terms of the seven steps of the data life cycle. Every single step of data and evaluation is deeply embedded with the worldviews and hidden implicit biases of the people involved.  Each step presents opportunities to increase equity, inclusion, and fairness.
+
+This checklists walks you through many of the stages of your analysis where bias and a lack of high ethical standards and fairness might accidentally leak into your data project.
+
+
+# Step 1: Funding Statement
+
+The first step in getting your analysis on strong ethical footing is to include a brief statement about who and what organizations are funding the project. Include as this funding path as far up the chain as possible.
+ 
+# Step 2: Motivation Statement
+
+The next step is to include the data product's Motivation Statement. This clearly lays out both the explicit and implicit motives and hopes and dreams of your data analysis. It's a crucial step in laying the foundation of an ethically strong piece of work. If you'd like some guidance you can download the [Motivation Statement checklist](https://weallcount.com/wp-content/uploads/2019/05/Motivation-Checklist-INteractive.pdf)
+
+
+# Step 3: Data Biography
+
+Building a data biography, a comprehensive background of the conception, birth and life of any dataset is an essential step along the path to ethics in data science. If you'd like to read about some horror stories that you can avoid with a data biography check it out [here.](https://weallcount.com/2019/01/24/fresh-apples-to-old-oranges-a-case-study-in-why-data-biographies-arent-only-useful-theyre-ethical/)
+
+A data biography needs to be built for all data: data that you collected, data that comes from large trusted sources, data that comes from open data libraries, data that comes from peer-reviewed research. All data. Some organizations already have a catalog of data biographies and some are still developing theirs. Here's a catalog of publicly available data biographies.
+
+We have developed two versions of the data biography: a short version and a comprehensive version.
+
+The short version of the data biography is the basics. It consists of four core questions:
+**Who?**
+Who collected the data?
+Who owns the data?
+Who is included within the data?
+Who is intentionally or unintentionally excluded from the data?
+
+**How?**
+What are the methods used for the data collection design and implementation?
+
+**Where?**
+In what locations was the data collected?
+Where is the data being stored?
+
+**Why?**
+For what specific purpose was each dataset you're using collected?
+Do you have informed consent to use the data for any other purpose?
+
+**When?**
+When was the data collected?
+
+
+# Step 4: Design 
+
+## Equity in Data Distributions 
+
+One important aspect of equity in your data analysis is understanding how the distribution of key subpopulations in your sample match up to key subpopulations in your target population. We have a simple example here that will show you a quick and easy way to look at that.
+
+**Read data:**
+```{r,echo=TRUE, results='asis'}
+dd <- read.csv("www/Example data.csv",
+              na.strings=c(""," ","98","99","NA"),
+              fileEncoding = 'UTF-8-BOM')
+renderDataTable({dd}, options = list(pageLength = 5))
+```
+
+**Specify a variable name:**
+```{r}
+Variable_Name <- "Gender"
+```
+```{r}
+# Observed counts:
+Observed_Counts <- as.data.frame(xtabs(dd[Variable_Name]))
+renderTable({Observed_Counts})
+
+
+```
+**Enter expected poportions:**
+```{r}
+Expected_Proportions = c(.5,.5)
+```
+```{r}
+report <- within(
+  Observed_Counts,
+  {
+    Expected_Proportions <- Expected_Proportions
+    Observed_Proportions <- Freq/sum(Freq)
+  })
+```
+```{r,results='asis'}
+mytable(report)
+```
+Is there evidence that the observed proportions are different from the expected proportions?
+```{r, echo=echo}
+chitest <- with(report, chisq.test(Freq, p = Expected_Proportions))
+chitest <- with(chitest,
+                data.frame('Chi Squared' = statistic,
+                           'df' = as.integer(parameter),
+                           'p-value' = HTML(I(pfmt(p.value))),
+                           check.names = FALSE))
+```
+```{r, results='asis'}
+print(xtable(chitest), sanitize.text.function = identity,  type = 'html', include.rownames = FALSE, 
+      html.table.attributes = "style = 'width: auto;'")
+mytable(chitest)
+
+#z <- chisq.test(tab[,1], p = tab[,2])
+
+#renderPrint({z})
+
+#assigning categorical responses within variable of interest
+keyvar1codes <- c(1,2)
+
+#assigning target proportions within population for variable of interest
+keyvar1pr <- c(.5,.5)
+  
+#get variable of interest from sample data
+KeyVar1 <- dd[1]
+
+#counting up occurrences to calculate sample proportions
+countKeyVar1.1 <- length(which(KeyVar1 == keyvar1codes[1])) 
+countKeyVar1.2 <- length(which(KeyVar1 == keyvar1codes[2]))
+
+
+#Perform test to compare sample and population proportions
+keyvar1z <- chisq.test(c(countKeyVar1.1,countKeyVar1.2), p = keyvar1pr)
+unclass(keyvar1z) 
+keyvar1z$p.value
+
+FinalOutputkeyvar1z <- "yellow"
+FinalOutputkeyvar1z[keyvar1z$p.value > .05] <- "green"
+FinalOutputkeyvar1z[keyvar1z$p.value > .001 &keyvar1z$p.value > .0499] <- "yellow"
+FinalOutputkeyvar1z[keyvar1z$p.value < .001] <- "red"
+```
+
+## Prediction vs Causal Analysis
+
+In order to build the foundation for ethics in your data analysis, you need to be quite clear whether you're doing causal analysis or predictive analysis. Most machine learning and statistical algorithms are designed to work for prediction. If you are trying to answer a causal question, you need to use a different set of tools.
+
+What does it mean to say that X causes Y? The concept has puzzled philosophers
+since Plato -- and probably earlier.
+
+There's a practical concept of cause that's useful in everyday life. If you
+wonder "will taking this pill help to cure my cold?", you are asking a causal
+question. _What would happen if I take this pill_ versus 
+_what would happen if I don't take this pill._ The practical idea of _cause_
+involve comparing outcomes under different interventions or treatments.
+
+A practical meaning for the word prediction is _guessing the unknown from the known._
+If I observe someone and know the value of X, can I make a good guess about the
+probable value of Y? With prediction, there does not have to be any intervention.
+If you find that your neighbor is taking cold medicine, you can make a pretty good
+guess that they have a cold. Having a cold caused your neighbour to take the medicine
+but for purposes of predicting the unknown from the known, it doesn't matter 
+whether X caused Y, or Y caused X, or some other factor caused both X and Y.
+
+  - Start with a good example.
+  - Alberto's weight example might be good (but problematic because we know
+    the ecological association, not the overall -- or pooled -- association)
+  - The role of weight in predicting health depends on what else you know and on the
+    context:
+    1. If you know someone's weight but you know nothing about where they live,
+       then a
+       higher weight is associated with higher life expectancy. 
+    2. If all you know is that someone lives in the U.S., higher weight is associated
+       with lower life expectancy.
+    3. What if you trying to decide whether you should lose weight? 
+       Neither of the relationships above, tells you what would happen 
+       if you were to opt to lose (or gain) weight.
+  - Which of the above involves a __non-causal predictive association__ and which 
+    involves a __causal association__?
+    
+```{r,echo=FALSE, results='asis'}
+text <- 
+  paste0(
+	tags$blockquote(
+      tags$p(style = 'color:blue;margin-left=40px;',
+	'Examples 1 and 2 involve a predictive association in which ',
+	'you observe someone and make a best prediction on the basis of ',
+	'your analysis.',tags$br(),tags$br(),
+	'In example 3, you are asking what would happen ', 
+	tags$i('if you opt'), ' to lose weight or gain weight.',
+	tags$br(),tags$br(),
+	'The ', tags$i('causal'), 
+	' effect of weight gain, not the predictive relationship is what\'s relevant for your decision.'
+      )))			
+actionButton('causal',"Discussion")
+output$text1 <- 
+	renderText({text})
+conditionalPanel('(input.causal % 2) > 0',fluidPage(
+	wellPanel(htmlOutput('text1'))))
+```
+
+
+# Step 5: Analysis
+
+## Fairness across groups
+
+Have we tested model results for fairness with respect to different affected groups (e.g., tested for disparate error rates)?
+
+Here we draw on Nikita Kozodoi's package 'fairness' which contains functions to compute measures of algorithmic fairness such as Disparate Impact, Demographic Parity, Accuracy Parity and more.The fairness measures are computed based on a confusion matrix of a classification model.
+
+```{r,echo=TRUE,message=FALSE}
+devtools::install_github("kozodoi/Fairness")
+library("fairness")
+df = fairness::compas
+head(df)
+```
+
+#### Accuracy Parity
+The *Accuracy Parity* is basically how often the algorithm predicts the correct answer, comparing rates of correctness across groups. To find the Accuracy Parity metric [(Friedler et al. 2018)](https://arxiv.org/pdf/1602.07043) use the following:
+
+```{r,echo=TRUE}
+acc_parity(actuals = df$label_value, predicted = df$score, 
+           group = df$race, base = "Caucasian")
+```
+
+Here *actuals* is the vector of actual target variables - the known outcome; *predicted* is the predicted target values - the prediction made by your algorithm; *group* is one selected sensitive or vulnerable group (can be binary or a factor); and *base* is the baseline for comparison. 
+
+#### Demographic Parity
+*Demographic Parity* is a measure of how equal Yes predictions are across groups. To find the Demongraphic Parity metric [(Calders and Verwer, 2010)](https://link.springer.com/content/pdf/10.1007/s10618-010-0190-x.pdf) use the code:
+
+```{r,echo=TRUE}
+dem_parity(predicted=df$score, group= df$race, base  = "Caucasian")
+```
+
+Here *predicted* is the vector of predicted target values; *group* is still one selected sensitive or vulnerable group; and *base* is the baseline for comparison.
+
+#### Disparate Impact
+The concept of *Disparate Impact* is one of the most relied on currently. It measured the degree to which subgroups are disproportionately affected by errors. This measures This function calculates the Disparate Impact Metric [(Feldman, et al, 2015)](https://arxiv.org/pdf/1412.3756.pdf;)
+```{r,echo=TRUE}
+dis_impact(predicted=df$score,group= df$race,base  = "Caucasian")
+```
+
+Here *predicted* is the vector of predicted target values; *group* is still one selected sensitive or vulnerable group; and *base* is the baseline for comparison.
+
+#### False Negative Parity
+The *False Negative Parity* (or FNR)is the measure of how many times we predict No when the answer is really Yes - compared across groups. For example, does our model say No when it's really Yes more often for Hispanic people than for Caucasian people? These calculations are based on [(Chouldechova 2017)](https://arxiv.org/pdf/1703.00056)
+```{r,echo=TRUE}
+fnr_parity(actuals = df$label_value,predicted=df$score,group= df$race,base  = "Caucasian")
+```
+
+Here *actuals* is the vector of actual target variables - the known outcome; and *predicted* is the vector of predicted target values; *group* is still one selected sensitive or vulnerable group; and *base* is the baseline for comparison.
+
+#### False Positive Rate Parity
+The *False Positive Parity* is the measure of how many times we predict Yes when the answer is really No - compared across groups. For example, does our model say Yes when it's really No more often for Caucasian people than for Black people? False Positive Rate Parity estimates are based on [(Chouldechova 2017)](https://arxiv.org/pdf/1703.00056)
+```{r,echo=TRUE}
+fpr_parity(actuals = df$label_value,predicted=df$score,group= df$race,base = "Caucasian")
+```
+
+Here *actuals* is the vector of actual target variables - the known outcome; and *predicted* is the vector of predicted target values; *group* is still one selected sensitive or vulnerable group; and *base* is the baseline for comparison.
+
+#### Negative Positive Value Parity
+Negate Positive Value Parity [(see Aeuquitas bias audit toolkit)](https://github.com/dssg/aequitas)
+```{r,echo=TRUE}
+npv_parity(actuals = df$label_value,predicted=df$score, group= df$race,base = "Caucasian")
+```
+
+Here *actuals* is the vector of actual target variables - the known outcome; and *predicted* is the vector of predicted target values; *group* is still one selected sensitive or vulnerable group; and *base* is the baseline for comparison.
+
+#### Positive Positive Value Parity
+This *Positive Positive Value Parity* is also called the Precision. This is the fraction of actual Yes cases correctly predicted to be Yes out of all predicted positive cases, When the answer is Yes, how often do we actual predict Yes - and are our rates the same across sensitive subgroups? [(see Aeuquitas bias audit toolkit)](https://github.com/dssg/aequitas)
+```{r,echo=TRUE}
+ppv_parity(actuals = df$label_value,predicted=df$score, group= df$race,base = "Caucasian")
+```
+
+Here *actuals* is the vector of actual target variables - the known outcome; and *predicted* is the vector of predicted target values; *group* is still one selected sensitive or vulnerable group; and *base* is the baseline for comparison.
