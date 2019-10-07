@@ -3,7 +3,7 @@
 ### 2019-10-05:
 
 * Ella Kaye: Working with Text in R
-    * [Slides]()
+    * [Slides](https://rawcdn.githack.com/rladies/meetup-presentations_toronto/78809896ddae0d6ff8924e86b4c153f7f5d91abf/2019-10-05/text_in_R.html)
     * [Materials](https://github.com/rladies/meetup-presentations_toronto/blob/master/2019-10-05)
 
 ### 2019-07-18:
